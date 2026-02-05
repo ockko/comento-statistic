@@ -15,4 +15,40 @@
         from statistic.request_info ri
         where left(ri.create_date, 4) = #{yearMonth};
     </select>
+
+    <select id="selectDeptMonthLogin" parameterType="string" resultType="DeptMonthCountDto">
+        select ui.dept_name as deptName, #{yearMonth} as yearMonth, count(ri.request_id) as totCnt
+        from statistic.request_info ri
+        join statistic.user_info ui on ri.user_id = ui.user_id
+        where left(ri.create_date, 4) = #{yearMonth}
+        group by ui.dept_name;
+    </select>
+
+    <select id="selectDateLogin" parameterType="string" resultType="DateCountDto">
+        select concat('20', #{date}) as date, count(*) as totCnt
+        from statistic.request_info ri
+        where left(ri.create_date, 6) = #{date};
+    </select>
+
+    <select id="selectAverageLogin" parameterType="string" resultType="AverageCountDto">
+        select concat('20', #{startDate}) as startDate, concat('20', #{endDate}) as endDate, ifnull(avg(t.daily_cnt), 0) as avgCnt
+        from (
+            select count(*) as daily_cnt
+            from statistic.request_info ri
+            where left(ri.create_date, 6) between #{startDate} and #{endDate}
+            group by left(ri.create_date, 6)
+        ) t;
+    </select>
+
+    <select id="selectExcludeHolidayLogin" parameterType="map" resultType="long">
+        select count(*)
+        from statistic.request_info ri
+        where left(ri.create_date, 6) between #{startDate} and #{endDate}
+        <if test="holidayList != null and holidayList.size() > 0">
+            and left(ri.create_date, 6) not in
+            <foreach collection="holidayList" item="holiday" open="(" separator="," close=")">
+                #{holiday}
+            </foreach>
+        </if>
+    </select>
 </mapper>
